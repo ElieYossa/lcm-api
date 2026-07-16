@@ -1,0 +1,39 @@
+# Dépendances
+node_modules/
+
+# Compilation TypeScript
+dist/
+build/
+*.tsbuildinfo
+
+# Variables d'environnement (TRÈS IMPORTANT)
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads (Pour ne pas partager les images de test)
+uploads/categories/*
+uploads/shops/*
+uploads/products/*
+uploads/documents/*
+# On garde les dossiers mais pas les fichiers à l'intérieur
+!uploads/**/.gitkeep
+
+# OS (Mac/Windows)
+.DS_Store
+Thumbs.db
+
+# IDE (VS Code, WebStorm)
+.vscode/
+.idea/
+
+# Fichiers de verrouillage (Optionnel, certains préfèrent les garder)
+# package-lock.json
+# yarn.lock
