@@ -1,8 +1,9 @@
 import { Sequelize, Op } from 'sequelize';
-import { 
-    Shop, Product, Category, SubCategory, 
-    Delivery, Order, ServiceOffer, Booking, 
-    Wallet, Transaction, sequelize 
+import {
+    Shop, Product, Category, SubCategory,
+    Delivery, Order, ServiceOffer, Booking,
+    Wallet, Transaction, sequelize,
+    User
 } from '../../../shared/models/index.model';
 import { ProductStatus } from '../../../shared/models/product.model';
 import { ShopStatus } from '../../../shared/models/shop.model';
@@ -11,18 +12,28 @@ import { nanoid } from 'nanoid';
 
 export class CommerceService {
     static async createShop(userId: string, shopData: any) {
+        let referrerId = null;
+        
+        if (shopData.referredBy) {
+            const referrer = await User.findOne({ where: { referralCode: shopData.referredBy } });
+            if (referrer) {
+                referrerId = referrer.id;
+            }
+        }
+
         return await Shop.create({
             ...shopData,
             ownerId: userId,
+            referredBy: referrerId,
             status: ShopStatus.PENDING,
-            documents: shopData.documents ? JSON.stringify(shopData.documents) : null
+            documents: shopData.documents || null
         });
     }
 
     static async getAllMyShops(userId: string) {
-        return await Shop.findAll({ 
+        return await Shop.findAll({
             where: { ownerId: userId },
-            include: [{ model: Product, as: 'products' }] 
+            include: [{ model: Product, as: 'products' }]
         });
     }
 
@@ -74,7 +85,7 @@ export class CommerceService {
         }
 
         updateData.status = ProductStatus.PENDING;
-        updateData.rejectionReason = null; 
+        updateData.rejectionReason = null;
 
         return await product.update(updateData);
     }
@@ -121,14 +132,52 @@ export class CommerceService {
     }
 
 
-    static async getApprovedProducts(filters: any) {
-        return await Product.findAll({
-            where: { status: ProductStatus.APPROVED, isActive: true, ...filters },
-            include: [{ model: Shop, as: 'shop', where: { status: ShopStatus.APPROVED } }]
+    static async getApprovedProducts(query: any) {
+        const { name, categoryId, subCategoryId, page = 1 } = query;
+
+        const LIMIT = 10;
+        const offset = (Number(page) - 1) * LIMIT;
+
+        const whereClause: any = {
+            status: ProductStatus.APPROVED,
+            isActive: true
+        };
+
+        if (name) {
+            whereClause.name = { [Op.like]: `%${name}%` };
+        }
+
+        if (categoryId) {
+            whereClause.categoryId = categoryId;
+        }
+
+        if (subCategoryId) {
+            whereClause.subCategoryId = subCategoryId;
+        }
+
+        const { count, rows } = await Product.findAndCountAll({
+            where: whereClause,
+            limit: LIMIT,
+            offset: offset,
+            include: [{
+                model: Shop,
+                as: 'shop',
+                where: { status: ShopStatus.APPROVED },
+                attributes: ['id', 'name', 'logo']
+            }],
+            order: [['createdAt', 'DESC']]
         });
+
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / LIMIT),
+            currentPage: Number(page),
+            itemsPerPage: LIMIT,
+            products: rows
+        };
     }
 
-    static async getNearbyShops(lat: number, lng: number, radius: number = 10) {    
+    static async getNearbyShops(lat: number, lng: number, radius: number = 10) {
         const distanceField = Sequelize.literal(`(
             6371 * acos(
                 cos(radians(${lat})) * cos(radians(latitude)) *
@@ -145,26 +194,58 @@ export class CommerceService {
         });
     }
 
-    static async getNearbyProducts(lat: number, lng: number, radius: number = 10) {
+    static async getNearbyProducts(query: any) {
+        const { lat, lng, radius = 10, page = 1, name, categoryId, subCategoryId } = query;
+
+        const LIMIT = 10;
+        const offset = (Number(page) - 1) * LIMIT;
+
         const distanceField = Sequelize.literal(`(
             6371 * acos(
-                cos(radians(${lat})) * cos(radians(latitude)) *
-                cos(radians(longitude) - radians(${lng})) +
-                sin(radians(${lat})) * sin(radians(latitude))
+                cos(radians(${Number(lat)})) * cos(radians(latitude)) *
+                cos(radians(longitude) - radians(${Number(lng)})) +
+                sin(radians(${Number(lat)})) * sin(radians(latitude))
             )
         )`);
 
-        return await Product.findAll({
+        const productWhere: any = {
+            status: ProductStatus.APPROVED,
+            isActive: true
+        };
+
+        if (name) productWhere.name = { [Op.like]: `%${name}%` };
+        if (categoryId) productWhere.categoryId = categoryId;
+        if (subCategoryId) productWhere.subCategoryId = subCategoryId;
+
+        const { count, rows } = await Product.findAndCountAll({
+            where: productWhere,
+            limit: LIMIT,
+            offset: offset,
+            distinct: true,
             include: [{
                 model: Shop,
                 as: 'shop',
-                attributes: { include: [[distanceField, 'distance']] },
-                where: { status: ShopStatus.APPROVED },
+                attributes: {
+                    include: [[distanceField, 'distance']]
+                },
+                where: {
+                    status: ShopStatus.APPROVED,
+                    [Op.and]: [
+                        Sequelize.where(distanceField, { [Op.lte]: Number(radius) })
+                    ]
+                },
                 required: true
             }],
-            where: { status: ProductStatus.APPROVED, isActive: true },
-            order: [[Sequelize.literal(`shop.distance`), 'ASC']]
+            order: [[Sequelize.literal('`shop.distance`'), 'ASC']]
         });
+
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / LIMIT),
+            currentPage: Number(page),
+            radius: `${radius}km`,
+            products: rows
+        };
     }
 
 
