@@ -13,7 +13,7 @@ import { nanoid } from 'nanoid';
 export class CommerceService {
     static async createShop(userId: string, shopData: any) {
         let referrerId = null;
-        
+
         if (shopData.referredBy) {
             const referrer = await User.findOne({ where: { referralCode: shopData.referredBy } });
             if (referrer) {
@@ -35,6 +35,69 @@ export class CommerceService {
             where: { ownerId: userId },
             include: [{ model: Product, as: 'products' }]
         });
+    }
+
+    static async getMyProducts(userId: string, query: any) {
+        const page = parseInt(query.page) || 1;
+        const status = query.status !== "" ? query.status : undefined;
+        const isActive = query.isActive !== "" ? query.isActive : undefined;
+        const name = query.name !== "" ? query.name : undefined;
+        const shopId = query.shopId !== "" ? query.shopId : undefined;
+
+        const LIMIT = 8;
+        const offset = (page - 1) * LIMIT;
+
+        const myShops = await Shop.findAll({
+            where: { ownerId: userId },
+            attributes: ['id']
+        });
+
+        const shopIds = myShops.map(s => s.id);
+
+        if (shopIds.length === 0) {
+            return { totalItems: 0, totalPages: 0, currentPage: page, items: [] };
+        }
+
+        const whereClause: any = {
+            shopId: { [Op.in]: shopIds }
+        };
+
+        if (shopId) {
+            if (shopIds.includes(shopId)) {
+                whereClause.shopId = shopId;
+            } else {
+                throw new Error("Cette boutique ne vous appartient pas.");
+            }
+        }
+
+        if (status) whereClause.status = status;
+
+        if (isActive !== undefined) {
+            whereClause.isActive = (isActive === 'true' || isActive === true);
+        }
+
+        if (name) {
+            whereClause.name = { [Op.like]: `%${name}%` };
+        }
+
+        const { count, rows } = await Product.findAndCountAll({
+            where: whereClause,
+            limit: LIMIT,
+            offset: offset,
+            distinct: true,
+            include: [
+                { model: Shop, as: 'shop', attributes: ['name', 'logo'] },
+                { model: Category, attributes: ['name'] }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / LIMIT),
+            currentPage: page,
+            items: rows
+        };
     }
 
     static async getShopById(shopId: string) {
@@ -63,9 +126,9 @@ export class CommerceService {
             throw new Error("Impossible d'ajouter des produits : Boutique non approuvée par l'admin.");
         }
 
-        const images = Array.isArray(productData.images)
-            ? JSON.stringify(productData.images)
-            : JSON.stringify([productData.images]);
+        const images = Array.isArray(productData.icon)
+            ? JSON.stringify(productData.icon)
+            : JSON.stringify([productData.icon]);
 
         return await Product.create({
             ...productData,
@@ -80,12 +143,19 @@ export class CommerceService {
 
         if (!product || product.shop?.ownerId !== userId) throw new Error("Action non autorisée");
 
-        if (updateData.images) {
-            updateData.images = Array.isArray(updateData.images) ? JSON.stringify(updateData.images) : JSON.stringify([updateData.images]);
+        const criticalFields = ['name', 'description', 'price', 'images', 'categoryId', 'subCategoryId'];
+        const needsRevalidation = criticalFields.some(field => updateData[field] !== undefined);
+
+        if (needsRevalidation) {
+            updateData.status = ProductStatus.PENDING;
+            updateData.rejectionReason = null;
         }
 
-        updateData.status = ProductStatus.PENDING;
-        updateData.rejectionReason = null;
+        if (updateData.images) {
+            updateData.images = Array.isArray(updateData.images)
+                ? JSON.stringify(updateData.images)
+                : JSON.stringify([updateData.images]);
+        }
 
         return await product.update(updateData);
     }

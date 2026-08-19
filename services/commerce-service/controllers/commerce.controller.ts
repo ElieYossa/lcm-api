@@ -35,6 +35,23 @@ export const getMyShops = async (req: Request, res: Response) => {
     }
 };
 
+export const getMyProducts = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const result = await CommerceService.getMyProducts(userId, req.query);
+        
+        return sendResponse(
+            res, 
+            200, 
+            true, 
+            "Vos produits ont été récupérés avec succès", 
+            result
+        );
+    } catch (error: any) {
+        return sendResponse(res, 400, false, error.message);
+    }
+};
+
 export const updateShop = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
@@ -60,6 +77,9 @@ export const addProduct = async (req: Request, res: Response) => {
     try {
         const shopId = req.params.shopId as string;
         const data = req.body;
+        if (req.file) {
+            data.icon = req.file.path;
+        }
         const product = await CommerceService.addProduct(shopId, data);
         return sendResponse(res, 201, true, "Produit ajouté pour validation par l'admin", product);
     } catch (error: any) {

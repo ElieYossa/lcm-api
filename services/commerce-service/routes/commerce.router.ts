@@ -26,11 +26,13 @@ Comrouter.post('/shops',
     ]), 
     CommerceCtrl.createShop
 );
+
 Comrouter.get('/shops/my', CommerceCtrl.getMyShops);
+Comrouter.get('/products/my', CommerceCtrl.getMyProducts);
 Comrouter.patch('/shops/:shopId', upload.single('icon'), CommerceCtrl.updateShop);
 Comrouter.delete('/shops/:shopId', CommerceCtrl.deleteShop);
 
-Comrouter.post('/shops/:shopId/products', CommerceCtrl.addProduct);
+Comrouter.post('/shops/:shopId/products',upload.single('icon'), CommerceCtrl.addProduct);
 Comrouter.patch('/products/:productId', upload.single('image'), CommerceCtrl.updateProduct);
 Comrouter.delete('/products/:productId', CommerceCtrl.deleteProduct);
 

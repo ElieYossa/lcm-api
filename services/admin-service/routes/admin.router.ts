@@ -41,4 +41,8 @@ AdminRouter.delete('/savings-plans/:id', AdminController.deleteSavingsPlan);
 AdminRouter.get('/withdrawals', AdminController.getWithdrawalRequests);
 AdminRouter.patch('/process-withdrawal', AdminController.processWithdrawal);
 
+AdminRouter.get('/pending-shops', AdminController.getPendingShops);
+AdminRouter.get('/pending-products', AdminController.getPendingProducts);
+AdminRouter.get('/pending-services', AdminController.getPendingServices);
+
 export default AdminRouter;

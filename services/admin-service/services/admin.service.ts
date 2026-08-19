@@ -195,4 +195,85 @@ export class AdminService {
         trx.status = status;
         return await trx.save();
     }
+
+    private static readonly LIMIT = 8;
+
+    static async getPendingShops(page: number = 1) {
+        const offset = (page - 1) * this.LIMIT;
+
+        const { count, rows } = await Shop.findAndCountAll({
+            where: { status: ShopStatus.PENDING },
+            limit: this.LIMIT,
+            offset: offset,
+            distinct: true, 
+            include: [{ 
+                model: User, 
+                as: 'owner', 
+                attributes: { exclude: ['password'] } 
+            }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / this.LIMIT),
+            currentPage: page,
+            items: rows
+        };
+    }
+
+    static async getPendingProducts(page: number = 1) {
+        const offset = (page - 1) * this.LIMIT;
+
+        const { count, rows } = await Product.findAndCountAll({
+            where: { status: ProductStatus.PENDING },
+            limit: this.LIMIT,
+            offset: offset,
+            distinct: true,
+            include: [
+                {
+                    model: Shop,
+                    as: 'shop',
+                    include: [{ model: User, as: 'owner', attributes: { exclude: ['password'] } }]
+                },
+                { model: Category },
+                { model: SubCategory }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / this.LIMIT),
+            currentPage: page,
+            items: rows
+        };
+    }
+
+    static async getPendingServices(page: number = 1) {
+        const offset = (page - 1) * this.LIMIT;
+
+        const { count, rows } = await ServiceOffer.findAndCountAll({
+            where: { status: 'pending' },
+            limit: this.LIMIT,
+            offset: offset,
+            distinct: true,
+            include: [
+                {
+                    model: Shop,
+                    as: 'shop',
+                    include: [{ model: User, as: 'owner', attributes: { exclude: ['password'] } }]
+                },
+                { model: Category }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / this.LIMIT),
+            currentPage: page,
+            items: rows
+        };
+    }
 }

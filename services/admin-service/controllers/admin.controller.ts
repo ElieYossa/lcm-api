@@ -124,8 +124,8 @@ export const deleteSubCategory = async (req: Request, res: Response) => {
 
 export const validateShop = async (req: Request, res: Response) => {
     try {
-        const { shopId, status } = req.body;
-        const shop = await AdminService.approveShop(shopId, status);
+        const { id, status } = req.body;
+        const shop = await AdminService.approveShop(id, status);
         return sendResponse(res, 200, true, `Boutique mise à jour au statut : ${status}`, shop);
     } catch (error: any) {
         return sendResponse(res, 400, false, error.message);
@@ -134,8 +134,8 @@ export const validateShop = async (req: Request, res: Response) => {
 
 export const validateProduct = async (req: Request, res: Response) => {
     try {
-        const { productId, status, reason } = req.body;
-        const product = await AdminService.approveProduct(productId, status, reason);
+        const { id, status, reason } = req.body;
+        const product = await AdminService.approveProduct(id, status, reason);
         return sendResponse(res, 200, true, `Produit mis à jour au statut : ${status}`, product);
     } catch (error: any) {
         return sendResponse(res, 400, false, error.message);
@@ -144,8 +144,8 @@ export const validateProduct = async (req: Request, res: Response) => {
 
 export const validateService = async (req: Request, res: Response) => {
     try {
-        const { serviceId, status, reason } = req.body;
-        const service = await AdminService.approveServiceOffer(serviceId, status, reason);
+        const { id, status, reason } = req.body;
+        const service = await AdminService.approveServiceOffer(id, status, reason);
         return sendResponse(res, 200, true, `Prestation de service mise à jour : ${status}`, service);
     } catch (error: any) {
         return sendResponse(res, 400, false, error.message);
@@ -244,6 +244,36 @@ export const processWithdrawal = async (req: Request, res: Response) => {
         const { transactionId, status } = req.body;
         const result = await AdminService.validateWithdrawal(transactionId, status);
         return sendResponse(res, 200, true, `Le retrait a été marqué comme : ${status}`, result);
+    } catch (error: any) {
+        return sendResponse(res, 400, false, error.message);
+    }
+};
+
+export const getPendingShops = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const result = await AdminService.getPendingShops(page);
+        return sendResponse(res, 200, true, "Boutiques en attente récupérées", result);
+    } catch (error: any) {
+        return sendResponse(res, 400, false, error.message);
+    }
+};
+
+export const getPendingProducts = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const result = await AdminService.getPendingProducts(page);
+        return sendResponse(res, 200, true, "Produits en attente récupérés", result);
+    } catch (error: any) {
+        return sendResponse(res, 400, false, error.message);
+    }
+};
+
+export const getPendingServices = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const result = await AdminService.getPendingServices(page);
+        return sendResponse(res, 200, true, "Services en attente récupérés", result);
     } catch (error: any) {
         return sendResponse(res, 400, false, error.message);
     }
