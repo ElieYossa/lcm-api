@@ -15,7 +15,7 @@ const path_1 = __importDefault(require("path"));
 const responseHandler_1 = require("../../shared/utils/responseHandler");
 const multer_1 = __importDefault(require("multer"));
 const app = (0, express_1.default)();
-const PORT = process.env.AUTH_PORT || 5000;
+const PORT = process.env.AUTH_PORT || 5033;
 app.use((0, helmet_1.default)({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());

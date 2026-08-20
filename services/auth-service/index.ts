@@ -12,7 +12,7 @@ import { sendResponse } from '../../shared/utils/responseHandler';
 import multer from 'multer';
 
 const app: Application = express();
-const PORT = process.env.AUTH_PORT || 5000;
+const PORT = process.env.AUTH_PORT || 5033;
 
 app.use(helmet({crossOriginResourcePolicy: { policy: "cross-origin" }}));
 
