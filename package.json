@@ -4,9 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "build:clean": "rm -rf dist && tsc",
     "start:auth": "nodemon -L --watch services --watch shared -e ts,json --exec ts-node services/auth-service/index.ts",
     "start:admin": "nodemon -L --watch services/admin-service --watch shared -e ts,json --exec ts-node services/admin-service/index.ts",
     "start:commerce": "nodemon -L --watch services/commerce-service --watch shared -e ts,json --exec ts-node services/commerce-service/index.ts",
+    "start:auth:prod": "node dist/services/auth-service/index.js",
+    "start:admin:prod": "node dist/services/admin-service/index.js",
+    "start:commerce:prod": "node dist/services/commerce-service/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

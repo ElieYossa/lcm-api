@@ -8,6 +8,8 @@ import { initModels } from '../../shared/models/index.model';
 import router from './routes/routes';
 import { initBankCron } from './cron/bank.cron';
 import path from 'path';
+import { sendResponse } from '../../shared/utils/responseHandler';
+import multer from 'multer';
 
 const app: Application = express();
 const PORT = process.env.AUTH_PORT || 5000;
@@ -22,6 +24,20 @@ app.use(morgan('dev'));
 
 app.use('/api', router);
 app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+
+app.use((err: any, req: any, res: any, next: any) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return sendResponse(res, 400, false, "Fichier trop volumineux. La limite est de 5 Mo.");
+        }
+        return sendResponse(res, 400, false, err.message);
+    }
+    
+    if (err) {
+        return sendResponse(res, 500, false, err.message || "Une erreur est survenue");
+    }
+    next();
+});
 
 initModels().then(() => {
     initBankCron(); 
