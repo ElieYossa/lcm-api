@@ -7,7 +7,9 @@ import path from 'path';
 import { initModels } from '../../shared/models/index.model'; 
 import routes from './routes/routes';
 
-dotenv.config({ path: path.join(__dirname, '../../../../.env') });
+dotenv.config({
+  path: path.resolve(process.cwd(), ".env")
+});
 
 const app: Application = express();
 const PORT = process.env.ADMIN_PORT || 5003;

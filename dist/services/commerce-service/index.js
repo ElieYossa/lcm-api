@@ -11,7 +11,9 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const index_model_1 = require("../../shared/models/index.model");
 const routes_1 = __importDefault(require("./routes/routes"));
-dotenv_1.default.config({ path: path_1.default.join(__dirname, '../../../../.env') });
+dotenv_1.default.config({
+    path: path_1.default.resolve(process.cwd(), ".env")
+});
 const app = (0, express_1.default)();
 const PORT = process.env.COMMERCE_PORT || 5001;
 app.use((0, helmet_1.default)());
